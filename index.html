@@ -292,6 +292,26 @@
 </div>
 
 <script>
+    // SECURITY DISCLAIMER - Shows on first load
+window.onload = function() {
+    if (!localStorage.getItem('disclaimerSeen')) {
+        const userConfirmed = confirm(
+            'SECURITY DISCLAIMER\n\n' +
+            'This tool runs 100% in your browser.\n' +
+            'Your JSON file NEVER leaves your computer.\n' +
+            'No data is uploaded anywhere.\n' +
+            'No tracking or analytics.\n' +
+            'All processing is done locally.\n\n' +
+        );
+        if (userConfirmed) {
+            localStorage.setItem('disclaimerSeen', 'true');
+        } else {
+            // Optionally redirect to GitHub for more info
+            // window.location.href = 'https://github.com/ac7777/bitwarden-backup-code-converter';
+        }
+    }
+};
+
 (function() {
     // DOM Elements
     const jsonFileInput = document.getElementById('jsonFileInput');
