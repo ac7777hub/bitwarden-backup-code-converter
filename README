@@ -1,82 +1,202 @@
-## 🔒 Security & Privacy
+Bitwarden Backup Code Converter
+Convert your Bitwarden JSON exports into clean PDF tables and Canva-ready CSV files with numbered backup codes (1-10).
 
-### This tool is 100% SAFE. Here's why:
+Repository Status
+Security: Client-Side Only
+Data: No Upload
+Privacy: No Tracking
+Open Source: Yes
 
-1. **No Data Uploads** - Everything runs entirely in your browser. **Your JSON file NEVER leaves your computer.**
+Features
+PDF Export - Clean table format with auto-sizing columns, perfect for printing
 
-2. **No Server Communication** - No network requests are made. You can verify this by:
-   - Opening your browser's Developer Tools (F12)
-   - Going to the "Network" tab
-   - You'll see ZERO external requests
+CSV Export - Canva-ready format with multi-line backup codes in each cell
 
-3. **Open Source** - The complete source code is available for you to inspect:
-   - [View the code here](https://github.com/[Your-Username]/bitwarden-backup-code-converter/blob/main/index.html)
-   - No minified or obfuscated code - everything is readable
+Backup Code Detection - Detects all formats: spaced numbers (3126 6674), hyphenated (AAAA-1111), plain numbers, alphanumeric
 
-4. **No Data Storage** - The tool does NOT:
-   - Save your passwords to disk
-   - Send them anywhere
-   - Store them in cookies or localStorage
-   - Share them with third parties
+Folder Mapping - Correctly maps folderId to folder name from the JSON's folders array
 
-5. **Self-Contained** - Only one HTML file. No dependencies except:
-   - jsPDF (loaded from CDN - [check their security here](https://github.com/parallax/jsPDF))
-   - jspdf-autotable (loaded from CDN)
+Sorted Output - Entries sorted alphabetically by folder name
 
-### How to Verify This Yourself:
+Clean Text - Automatically removes emojis and strange characters
 
-1. **Open Developer Tools** (F12 on Windows/Linux, Cmd+Option+I on Mac)
-2. Click the **"Network"** tab
-3. Use the tool - you'll see ZERO network requests to external servers
-4. Click the **"Sources"** tab - you can see all the JavaScript code
+Print-Ready PDF - Compact layout with page numbers and total code count
 
-### 📸 Screenshots of Verification:
+Auto-Sizing Columns - Tables adjust to fit long text like email addresses
 
-![No Network Requests](screenshots/network-tab.png)
-![Full Source Code](screenshots/source-code.png)
+Security and Privacy
+This tool runs entirely in your browser. Here is why it is safe:
 
-### 🔐 My Commitment:
+No Data Uploads
+Everything runs locally. Your JSON file NEVER leaves your computer. There is no server, no upload, and no data transmission.
 
-I created this tool to help the Bitwarden community because I use it myself. 
-**Your security is my priority.**
+No Server Communication
+No network requests are made. You can verify this by opening your browser's Developer Tools (F12) and going to the Network tab. You will see zero external requests.
 
-- ✅ 100% client-side
-- ✅ No data collection
-- ✅ No tracking
-- ✅ No analytics
-- ✅ No external storage
+Open Source
+The complete source code is available for you to inspect:
+https://github.com/ac7777/bitwarden-backup-code-converter/blob/main/index.html
 
-### 🛡️ How to Run This Safely:
+The code is not minified or obfuscated. Everything is readable.
 
-1. Download the HTML file from the repository
-2. Open it in your browser **while offline** (disconnect from the internet)
-3. Use the tool - it works completely offline (except for CDN dependencies on first load)
-4. For maximum security: download jsPDF and jspdf-autotable locally
+No Data Storage
+The tool does not:
 
-### 📋 Security Checklist:
+Save your passwords to disk
 
-- [x] Open source
-- [x] No external API calls
-- [x] No data persistence
-- [x] No analytics/tracking
-- [x] Runs entirely in your browser
-- [x] Can be run offline
+Send them anywhere
 
-## 🧪 Testing & Reviews
+Store them in cookies or localStorage
 
-This tool has been tested by:
-- [ ] Myself (daily user of Bitwarden)
-- [ ] Community members (see Issues and Discussions)
+Share them with third parties
 
-If you're concerned, here's what you can do:
-1. Inspect the source code
-2. Run it in a sandbox or VM first
-3. Disable your internet and test it offline
+Self-Contained
+Only one HTML file. No dependencies except for jsPDF and jspdf-autotable, which are loaded from CDN.
 
-## 📞 Questions?
+How to Verify
+Open Developer Tools (F12 on Windows/Linux, Cmd+Option+I on Mac)
 
-If you have security concerns, please open an issue or DM me on Reddit.
+Click the Network tab
 
----
+Use the tool - you will see no network requests
 
-*TL;DR: This is a client-side tool that runs entirely in your browser. Your passwords never leave your computer. You can verify this by checking the Network tab in DevTools.*
+Click the Sources tab - you can see all the JavaScript code
+
+How to Run Safely
+Download the HTML file from the repository
+
+Disconnect from the internet
+
+Open the file in your browser
+
+The tool works completely offline (after initial CDN load)
+
+For maximum security, download jsPDF and jspdf-autotable locally
+
+Security Checklist
+Open source
+
+No external API calls
+
+No data persistence
+
+No analytics or tracking
+
+Runs entirely in your browser
+
+Can be run offline
+
+Questions or Concerns
+If you have security concerns, please open an issue on GitHub or contact me on Reddit.
+
+How to Use
+1. Export from Bitwarden
+Open Bitwarden
+
+Go to Settings -> Export Vault
+
+Choose JSON format
+
+Save the file
+
+2. Use the Converter
+Open the HTML file in your browser
+
+Drag and drop or click to upload your JSON file
+
+Click "Convert JSON"
+
+Preview your data
+
+Download as PDF (print-ready table) or CSV (for Canva/Sheets)
+
+3. Import to Canva (for CSV)
+Download the CSV file
+
+Open Canva -> Add a Table element
+
+Click "Import data" (top right of the table)
+
+Upload your CSV file
+
+Enable "Wrap Text" to see each backup code on its own line
+
+CSV Format
+Column	Description
+Folder	The folder name from Bitwarden
+Username	The login username
+Password	The account password
+Backup Codes	All codes numbered 1-10, each on a new line
+PDF Format
+Clean table with 4 columns
+
+Auto-sizing columns for long text (email addresses, etc.)
+
+Each account on its own row
+
+Backup codes listed vertically
+
+Page numbers and total code count
+
+Technical Details
+Pure HTML/CSS/JavaScript - No server required, runs entirely in your browser
+
+No data uploads - Your data stays local, never leaves your computer
+
+jsPDF - Used for PDF generation
+
+jspdf-autotable - For clean table formatting
+
+Example Input
+{
+"folders": [
+{ "id": "folder1", "name": "Gaming" },
+{ "id": "folder2", "name": "Social" }
+],
+"items": [
+{
+"type": 1,
+"folderId": "folder1",
+"login": { "username": "ali7", "password": "12345" },
+"notes": "1. 3126 6674\n2. 8151 5915"
+}
+]
+}
+
+Example Output (CSV)
+Folder,Username,Password,Backup Codes
+Gaming,ali7,12345,"1. 3126 6674
+
+8151 5915"
+Social,alice123,TwitterPass456,"1. AAAA-1111-BBBB-2222
+
+CCCC-3333-DDDD-4444"
+
+Links
+View the source code: https://github.com/ac7777/bitwarden-backup-code-converter
+
+Report an issue: https://github.com/ac7777/bitwarden-backup-code-converter/issues
+
+Star this project: https://github.com/ac7777/bitwarden-backup-code-converter/stargazers
+
+Fork this project: https://github.com/ac7777/bitwarden-backup-code-converter/fork
+
+Contributing
+Feel free to open issues or submit pull requests.
+
+License
+MIT License - see LICENSE file for details
+
+Acknowledgments
+Built with love by ac7777
+
+Uses jsPDF for PDF generation
+
+Uses jspdf-autotable for table formatting
+
+TL;DR: This is a client-side tool that runs entirely in your browser. Your passwords never leave your computer. You can verify this by checking the Network tab in DevTools.
+
+Questions?
+If you have security concerns, please open an issue or contact me on Reddit.
+
+If this tool helped you, please consider giving it a star.
