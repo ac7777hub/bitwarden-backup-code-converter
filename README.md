@@ -75,5 +75,13 @@ Convert your Bitwarden JSON exports into clean **PDF tables** and **Canva-ready 
       "login": { "username": "ali7", "password": "12345" },
       "notes": "1. 3126 6674\n2. 8151 5915"
     }
+```
+## 📂 Example CSV Output:
+
+Folder,Username,Password,Backup Codes
+Gaming,ali7,12345,"1. 3126 6674
+2. 8151 5915"
+Social,alice123,TwitterPass456,"1. AAAA-1111-BBBB-2222
+2. CCCC-3333-DDDD-4444"
   ]
 }
