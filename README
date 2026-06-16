@@ -18,18 +18,22 @@ Features
 - Auto-Sizing Columns - Tables adjust to fit long text like email addresses
 
 Security and Privacy
-This tool runs entirely in your browser. Here is why it is safe:
-   - No Data Uploads
-     Everything runs locally. Your JSON file NEVER leaves your computer. There is no server, no upload, and no data transmission.
-   - No Server Communication
-   - No network requests are made. You can verify this by opening your browser's Developer Tools (F12) and going to the Network tab. You will see zero external requests.
-   - Open Source
-     The complete source code is available for you to inspect:
-     https://github.com/ac7777/bitwarden-backup-code-converter/blob/main/index.html
-   - The code is not minified or obfuscated. Everything is readable.
-   - No Data Storage
-   - Self-Contained
-   - Only one HTML file. No dependencies except for jsPDF and jspdf-autotable, which are loaded from CDN.
+      Network Tab Verification
+      Here is the Network tab showing NO external requests (only the CDN libraries for PDF generation):
+      ![Network tab showing no requests](network-tab.png)
+
+      This tool runs entirely in your browser. Here is why it is safe:
+         - No Data Uploads
+           Everything runs locally. Your JSON file NEVER leaves your computer. There is no server, no upload, and no data transmission.
+         - No Server Communication
+         - No network requests are made. You can verify this by opening your browser's Developer Tools (F12) and going to the Network tab. You will see zero external requests.
+         - Open Source
+           The complete source code is available for you to inspect:
+           https://github.com/ac7777/bitwarden-backup-code-converter/blob/main/index.html
+         - The code is not minified or obfuscated. Everything is readable.
+         - No Data Storage
+         - Self-Contained
+         - Only one HTML file. No dependencies except for jsPDF and jspdf-autotable, which are loaded from CDN.
 
 The tool does not:
 - Save your passwords to disk
