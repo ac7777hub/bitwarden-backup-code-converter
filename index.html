@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitwarden → PDF / CSV Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #f0f4fa;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 1400px; width: 100%; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 16px 40px -12px rgba(0,20,40,0.18);
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #0b1a2b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.2rem;
+        }
+        .badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.18rem 0.9rem;
+            border-radius: 40px;
+        }
+        .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-purple { background: #ede9fe; color: #5b21b6; }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+        .file-input-area {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-input-area:hover {
+            border-color: #2c7da0;
+            background: #f1f5f9;
+        }
+        .file-input-area input { display: none; }
+        .file-input-label {
+            display: inline-block;
+            background: #2c7da0;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .file-name {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .preview-panel {
+            border: 1px solid #e0eaf5;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #edf3fb;
+        }
+        .preview-header-title { font-weight: 600; font-size: 0.85rem; color: #1e3a5f; }
+        .preview-tag {
+            font-size: 0.7rem;
+            background: #eef4fb;
+            padding: 0.15rem 0.7rem;
+            border-radius: 20px;
+            color: #3a5f82;
+        }
+        .preview-body {
+            padding: 1rem 1.2rem 1.2rem;
+            overflow-y: auto;
+            max-height: 500px;
+            min-height: 200px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.85rem;
+            line-height: 1.55;
+            color: #0b1a2b;
+            flex: 1;
+            white-space: pre-wrap;
+        }
+        .preview-body .empty-state { color: #8aabcc; font-style: italic; font-size: 0.85rem; }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 0.7rem 1rem;
+            border-top: 1px solid #edf3fb;
+            align-items: center;
+        }
+        .btn {
+            border: 1px solid #c8d8ea;
+            padding: 0.5rem 1.3rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: 0.13s;
+            background: white;
+            color: #1a314b;
+        }
+        .btn:hover { background: #f0f5fb; }
+        .btn-blue   { background: #1a4c8c; border-color: #1a4c8c; color: white; }
+        .btn-blue:hover  { background: #0f3b6e; }
+        .btn-green  { background: #0d7a5f; border-color: #0d7a5f; color: white; }
+        .btn-green:hover { background: #0a5f49; }
+        .btn-purple { background: #5b21b6; border-color: #5b21b6; color: white; }
+        .btn-purple:hover { background: #4c1d95; }
+        .status-msg { font-size: 0.8rem; color: #0d7a5f; margin-left: auto; display: none; }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #eef2ff;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+        }
+
+        .footer-hint {
+            color: #5a7a9a;
+            font-size: 0.8rem;
+            border-top: 1px solid #e8f0f8;
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .table-preview {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            table-layout: auto;
+        }
+        .table-preview th {
+            background: #eef4fa;
+            font-weight: 700;
+            border: 1px solid #c5d8ed;
+            padding: 0.3rem 0.5rem;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .table-preview td {
+            border: 1px solid #dce8f5;
+            padding: 0.3rem 0.5rem;
+            vertical-align: top;
+            word-wrap: break-word;
+            max-width: 200px;
+        }
+        .table-preview .code-cell {
+            font-family: monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 300px;
+        }
+        .table-preview .folder-cell { font-weight: 600; }
+        .table-preview .username-cell { word-wrap: break-word; }
+        .table-preview .password-cell { word-wrap: break-word; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+    <div class="card">
+        <div class="card-title">
+            🔐 Bitwarden → PDF / CSV Converter
+            <span class="badge badge-blue">JSON → PDF Table</span>
+            <span class="badge badge-green">JSON → CSV</span>
+            <span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:#4a6a8a;">Clean table format · No emojis · Auto-sizing columns</span>
+        </div>
+        
+        <div class="file-input-area" id="dropZone">
+            <label class="file-input-label">
+                📂 Choose Bitwarden JSON File
+                <input type="file" id="jsonFileInput" accept=".json">
+            </label>
+            <div class="file-name" id="fileName">or drag & drop JSON file here</div>
+        </div>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;">
+            <button id="convertBtn" class="btn btn-blue">🔄 Convert JSON</button>
+            <button id="clearBtn" class="btn" style="border-color:#dc2626;color:#dc2626;">🗑️ Clear</button>
+        </div>
+
+        <div id="stats" class="stats"></div>
+        <div id="status" class="status" style="margin-top:0.5rem;font-size:0.85rem;"></div>
+    </div>
+
+    <!-- ══ TWO-COLUMN: PDF + CSV ════════════════════════════════════════════ -->
+    <div class="two-col">
+
+        <!-- ── PDF Panel ── -->
+        <div class="card" style="padding:1.5rem;">
+            <div class="card-title" style="font-size:1.1rem; margin-bottom:0.6rem;">
+                📄 PDF Export (Table Format)
+                <span class="badge badge-blue">print-ready</span>
+            </div>
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <span class="preview-header-title">PDF Table Preview</span>
+                    <span class="preview-tag" id="pdfEntryCount">0 entries</span>
+                </div>
+                <div id="pdfPreview" class="preview-body">
+                    <div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>
+                </div>
+                <div class="toolbar">
+                    <button id="pdfDownloadBtn" class="btn btn-green">⬇ Download PDF</button>
+                    <span id="pdfStatus" class="status-msg">✓ PDF saved!</span>
+                </div>
+            </div>
+            <div style="margin-top:0.8rem;font-size:0.8rem;color:#3a5f82;background:#f8fbff;padding:0.8rem;border-radius:10px;border:1px solid #e0eaf5;">
+                <strong>PDF features:</strong> Clean table with 4 columns · Auto-sizing columns for long text · Each account on its own row · Backup codes listed vertically · Compact print-ready format
+            </div>
+        </div>
+
+        <!-- ── CSV Panel ── -->
+        <div class="card" style="padding:1.5rem;">
+            <div class="card-title" style="font-size:1.1rem; margin-bottom:0.6rem;">
+                📊 CSV Export
+                <span class="badge badge-green">Canva-ready</span>
+            </div>
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <span class="preview-header-title">CSV Preview</span>
+                    <span class="preview-tag" id="csvRowCount">0 rows</span>
+                </div>
+                <div id="csvPreview" class="preview-body">
+                    <div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>
+                </div>
+                <div class="toolbar">
+                    <button id="csvDownloadBtn" class="btn btn-purple">⬇ Download CSV</button>
+                    <span id="csvStatus" class="status-msg">✓ CSV saved!</span>
+                </div>
+            </div>
+            <div style="margin-top:0.8rem;font-size:0.8rem;color:#3a5f82;background:#f8fbff;padding:0.8rem;border-radius:10px;border:1px solid #e0eaf5;">
+                <strong>How to import into Canva:</strong> Download CSV → Canva → Add Table → Import data → Upload CSV → Each code on its own line within the cell (enable Wrap Text)
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer-hint">
+        Extracts all login items from Bitwarden JSON · Maps folderId to folder name · Detects backup codes in any format · Numbers codes 1-10 · Sorted alphabetically by folder · No emojis or strange characters · Auto-sizing columns
+    </div>
+</div>
+
+<script>
+(function() {
+    // DOM Elements
+    const jsonFileInput = document.getElementById('jsonFileInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const dropZone = document.getElementById('dropZone');
+    const fileNameSpan = document.getElementById('fileName');
+    const statusSpan = document.getElementById('status');
+    const statsDiv = document.getElementById('stats');
+    
+    const pdfPreview = document.getElementById('pdfPreview');
+    const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+    const pdfStatus = document.getElementById('pdfStatus');
+    const pdfEntryCount = document.getElementById('pdfEntryCount');
+    
+    const csvPreview = document.getElementById('csvPreview');
+    const csvDownloadBtn = document.getElementById('csvDownloadBtn');
+    const csvStatus = document.getElementById('csvStatus');
+    const csvRowCount = document.getElementById('csvRowCount');
+
+    let currentItems = [];
+    let currentJsonData = null;
+
+    // ── Remove emojis and strange characters ──
+    function cleanText(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+            .replace(/[\u{2600}-\u{27BF}]/gu, '')
+            .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+            .replace(/\uFE0F/g, '')
+            .replace(/\u200D/g, '')
+            .replace(/[^\x20-\x7E\x0A\x0D]/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    // ── Backup code extraction ──
+    function extractNumberedBackupCodes(notesText) {
+        if (!notesText || notesText.trim() === '') return '';
+        
+        const codeSet = new Set();
+        const text = cleanText(notesText);
+        
+        const spacedPattern = /\b\d{3,4}\s+\d{3,4}\b/g;
+        let matches = text.match(spacedPattern);
+        if (matches) matches.forEach(m => codeSet.add(m.trim()));
+        
+        const numberedPattern = /(?:\d+\.\s*)?(\d{3,4}\s+\d{3,4})/g;
+        let numberedMatch;
+        while ((numberedMatch = numberedPattern.exec(text)) !== null) {
+            if (numberedMatch[1]) codeSet.add(numberedMatch[1].trim());
+        }
+        
+        const hyphenPattern = /\b[A-Z0-9]{3,5}-[A-Z0-9]{3,5}-[A-Z0-9]{3,5}-[A-Z0-9]{3,5}\b|\b[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\b|\b[A-Z0-9]{4}-[A-Z0-9]{4}\b/gi;
+        matches = text.match(hyphenPattern);
+        if (matches) matches.forEach(m => codeSet.add(m.toUpperCase()));
+        
+        const numberPattern = /\b\d{6,12}\b/g;
+        matches = text.match(numberPattern);
+        if (matches) matches.forEach(m => codeSet.add(m));
+        
+        const alphaNumPattern = /\b[A-Z0-9]{8,20}\b/g;
+        matches = text.match(alphaNumPattern);
+        if (matches) {
+            matches.forEach(m => {
+                if (!/^[A-Z]+$/.test(m)) codeSet.add(m);
+            });
+        }
+        
+        const lines = text.split(/[\n\r\t]+/);
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            let cleaned = line.replace(/^\d+\.\s*/, '');
+            const pairs = cleaned.match(/\d{3,4}\s+\d{3,4}/g);
+            if (pairs) pairs.forEach(p => codeSet.add(p));
+            
+            const parts = cleaned.split(/\s+/);
+            for (let part of parts) {
+                if (part.match(/^\d{6,}$/)) codeSet.add(part);
+                if (part.match(/^[A-Z0-9]{8,}$/i) && !/^[A-Z]+$/.test(part.toUpperCase())) {
+                    codeSet.add(part.toUpperCase());
+                }
+                if (part.match(/[A-Z0-9]{3,5}-[A-Z0-9]{3,5}/i)) {
+                    codeSet.add(part.toUpperCase());
+                }
+            }
+        }
+        
+        const spaceCodePattern = /\b(\d{4})\s+(\d{4})\b/g;
+        let spaceMatch;
+        while ((spaceMatch = spaceCodePattern.exec(text)) !== null) {
+            codeSet.add(`${spaceMatch[1]} ${spaceMatch[2]}`);
+        }
+        
+        let codesArray = Array.from(codeSet);
+        codesArray.sort((a, b) => {
+            if (a.length !== b.length) return a.length - b.length;
+            return a.localeCompare(b);
+        });
+        
+        const uniqueCodes = [];
+        for (let code of codesArray) {
+            const compact = code.replace(/\s/g, '').replace(/-/g, '');
+            let isDup = false;
+            for (let existing of uniqueCodes) {
+                const existingCompact = existing.replace(/\s/g, '').replace(/-/g, '');
+                if (existingCompact === compact) {
+                    isDup = true;
+                    break;
+                }
+            }
+            if (!isDup) uniqueCodes.push(code);
+        }
+        
+        const selectedCodes = uniqueCodes.slice(0, 10);
+        if (selectedCodes.length === 0) return '';
+        return selectedCodes.map((code, idx) => `${idx + 1}. ${code}`).join('\n');
+    }
+
+    // ── Parse Bitwarden JSON ──
+    function parseBitwardenJson(jsonData) {
+        const items = [];
+        if (!jsonData) return items;
+        
+        const folderMap = new Map();
+        if (jsonData.folders && Array.isArray(jsonData.folders)) {
+            for (let folder of jsonData.folders) {
+                if (folder.id && folder.name) {
+                    folderMap.set(folder.id, cleanText(folder.name));
+                }
+            }
+        }
+        
+        let itemsArray = [];
+        if (jsonData.items) {
+            itemsArray = jsonData.items;
+        } else if (jsonData.ciphers) {
+            itemsArray = jsonData.ciphers;
+        } else if (Array.isArray(jsonData)) {
+            itemsArray = jsonData;
+        } else {
+            for (let key in jsonData) {
+                if (Array.isArray(jsonData[key]) && jsonData[key].length > 0) {
+                    if (jsonData[key][0].type !== undefined || jsonData[key][0].login) {
+                        itemsArray = jsonData[key];
+                        break;
+                    }
+                }
+            }
+        }
+        
+        for (let item of itemsArray) {
+            const itemType = item.type || (item.login ? 1 : 0);
+            
+            if (itemType === 1 || item.login || item.username || item.password) {
+                let folderName = 'No Folder';
+                let username = '';
+                let password = '';
+                let notes = '';
+                
+                if (item.folderId && folderMap.has(item.folderId)) {
+                    folderName = folderMap.get(item.folderId);
+                } else if (item.folderId) {
+                    folderName = 'Uncategorized';
+                }
+                
+                if (item.login && item.login.username) {
+                    username = cleanText(item.login.username);
+                } else if (item.username) {
+                    username = cleanText(item.username);
+                } else if (item.name && item.name !== folderName) {
+                    username = cleanText(item.name);
+                }
+                
+                if (item.login && item.login.password) {
+                    password = cleanText(item.login.password);
+                } else if (item.password) {
+                    password = cleanText(item.password);
+                }
+                
+                if (item.notes) {
+                    notes = cleanText(item.notes);
+                } else if (item.login && item.login.notes) {
+                    notes = cleanText(item.login.notes);
+                }
+                
+                if (username || password || notes) {
+                    items.push({
+                        folder: folderName || 'No Folder',
+                        username: username || '',
+                        password: password || '',
+                        notes: notes || ''
+                    });
+                }
+            }
+        }
+        
+        return items;
+    }
+
+    // ── CSV Generation ──
+    function escapeCSVField(field) {
+        if (field === undefined || field === null) return '';
+        let str = String(field);
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            str = str.replace(/"/g, '""');
+            return `"${str}"`;
+        }
+        return str;
+    }
+
+    function generateCsv(items) {
+        const headers = ['Folder', 'Username', 'Password', 'Backup Codes'];
+        const rows = [headers];
+        let totalCodes = 0;
+        
+        for (let item of items) {
+            const codes = extractNumberedBackupCodes(item.notes);
+            const codeCount = codes ? codes.split('\n').length : 0;
+            totalCodes += codeCount;
+            const codesWithBreaks = codes ? codes.split('\n').join('\r\n') : '';
+            
+            rows.push([
+                cleanText(item.folder),
+                cleanText(item.username),
+                cleanText(item.password),
+                codesWithBreaks
+            ]);
+        }
+        
+        const csvString = rows.map(row => 
+            row.map(cell => escapeCSVField(cell)).join(',')
+        ).join('\n');
+        
+        return { csv: csvString, totalCodes: totalCodes };
+    }
+
+    // ── PDF Generation with Table and Auto-Sizing Columns ──
+    function generatePdfTable(items) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+        
+        // Title
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Bitwarden Backup Codes', 14, 18);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
+        doc.setTextColor(0, 0, 0);
+        
+        // Prepare table data
+        const sortedItems = [...items].sort((a, b) => a.folder.localeCompare(b.folder));
+        let totalCodes = 0;
+        
+        const tableData = [];
+        let maxFolderLen = 0, maxUserLen = 0, maxPassLen = 0;
+        
+        for (let item of sortedItems) {
+            const codes = extractNumberedBackupCodes(item.notes);
+            const codeLines = codes ? codes.split('\n') : [];
+            totalCodes += codeLines.length;
+            
+            const folder = cleanText(item.folder);
+            const username = cleanText(item.username);
+            const password = cleanText(item.password);
+            const codeText = codeLines.length > 0 ? codeLines.join('\n') : 'No codes found';
+            
+            // Track max lengths for column sizing (in characters)
+            maxFolderLen = Math.max(maxFolderLen, folder.length);
+            maxUserLen = Math.max(maxUserLen, username.length);
+            maxPassLen = Math.max(maxPassLen, password.length);
+            
+            tableData.push([folder, username, password, codeText]);
+        }
+        
+        // Calculate column widths based on content (in mm)
+        const pageWidth = 277; // A4 landscape in mm
+        const margin = 14;
+        const availableWidth = pageWidth - (margin * 2);
+        const minColWidth = 25;
+        const maxColWidth = 70;
+        
+        // Calculate base widths: longer content gets more space
+        let totalChars = maxFolderLen + maxUserLen + maxPassLen + 30; // 30 for codes column baseline
+        let folderRatio = Math.max(0.15, maxFolderLen / totalChars);
+        let userRatio = Math.max(0.15, maxUserLen / totalChars);
+        let passRatio = Math.max(0.15, maxPassLen / totalChars);
+        let codeRatio = Math.max(0.20, 30 / totalChars);
+        
+        // Normalize ratios
+        let sum = folderRatio + userRatio + passRatio + codeRatio;
+        folderRatio = folderRatio / sum;
+        userRatio = userRatio / sum;
+        passRatio = passRatio / sum;
+        codeRatio = codeRatio / sum;
+        
+        let folderWidth = Math.max(minColWidth, Math.min(maxColWidth, availableWidth * folderRatio));
+        let userWidth = Math.max(minColWidth, Math.min(maxColWidth, availableWidth * userRatio));
+        let passWidth = Math.max(minColWidth, Math.min(maxColWidth, availableWidth * passRatio));
+        let codeWidth = availableWidth - folderWidth - userWidth - passWidth;
+        
+        // Ensure minimum widths
+        if (codeWidth < 35) {
+            codeWidth = 35;
+            // Adjust others
+            let adjust = (folderWidth + userWidth + passWidth) / 3;
+            folderWidth = Math.max(minColWidth, adjust * 0.9);
+            userWidth = Math.max(minColWidth, adjust * 0.9);
+            passWidth = Math.max(minColWidth, adjust * 0.9);
+            // Recalculate
+            codeWidth = availableWidth - folderWidth - userWidth - passWidth;
+        }
+        
+        // Create table with dynamic column widths
+        doc.autoTable({
+            head: [['Folder', 'Username', 'Password', 'Backup Codes']],
+            body: tableData,
+            startY: 32,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [30, 58, 95],
+                textColor: [255, 255, 255],
+                fontSize: 8,
+                fontStyle: 'bold',
+                halign: 'left',
+                valign: 'middle',
+                cellPadding: 2.5
+            },
+            bodyStyles: {
+                fontSize: 7,
+                cellPadding: 2.5,
+                valign: 'top',
+                halign: 'left'
+            },
+            columnStyles: {
+                0: { cellWidth: folderWidth, halign: 'left', valign: 'top' },
+                1: { cellWidth: userWidth, halign: 'left', valign: 'top' },
+                2: { cellWidth: passWidth, halign: 'left', valign: 'top' },
+                3: { cellWidth: codeWidth, halign: 'left', valign: 'top' }
+            },
+            styles: {
+                font: 'helvetica',
+                fontSize: 7,
+                valign: 'top',
+                halign: 'left',
+                overflow: 'linebreak'
+            },
+            didDrawPage: function(data) {
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(6);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setTextColor(150, 150, 150);
+                    const pageText = `Page ${i} of ${pageCount} · ${totalCodes} backup codes total`;
+                    doc.text(pageText, 14, 297 - 10);
+                }
+            }
+        });
+        
+        return doc;
+    }
+
+    // ── Update Previews ──
+    function updateAll() {
+        if (!currentItems || currentItems.length === 0) {
+            pdfPreview.innerHTML = '<div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>';
+            csvPreview.innerHTML = '<div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>';
+            pdfEntryCount.textContent = '0 entries';
+            csvRowCount.textContent = '0 rows';
+            return;
+        }
+        
+        const sortedItems = [...currentItems].sort((a, b) => a.folder.localeCompare(b.folder));
+        let totalCodes = 0;
+        
+        // PDF Preview (HTML table with auto-sizing)
+        let previewHtml = `<table class="table-preview">
+            <thead><tr><th>Folder</th><th>Username</th><th>Password</th><th>Backup Codes</th></tr></thead><tbody>`;
+        
+        for (let item of sortedItems) {
+            const codes = extractNumberedBackupCodes(item.notes);
+            const codeLines = codes ? codes.split('\n') : [];
+            totalCodes += codeLines.length;
+            
+            const folder = cleanText(item.folder);
+            const username = cleanText(item.username);
+            const password = cleanText(item.password);
+            
+            previewHtml += `<tr>
+                <td class="folder-cell">${folder}</td>
+                <td class="username-cell">${username}</td>
+                <td class="password-cell">${password}</td>
+                <td class="code-cell">${codeLines.length > 0 ? codeLines.join('\n') : 'No codes found'}</td>
+            </tr>`;
+        }
+        
+        previewHtml += '</tbody></table>';
+        pdfPreview.innerHTML = previewHtml;
+        pdfEntryCount.textContent = `${currentItems.length} entries · ${totalCodes} codes`;
+        
+        // CSV Preview
+        const csvResult = generateCsv(currentItems);
+        const csvRows = csvResult.csv.split('\n');
+        const displayRows = csvRows.slice(0, 15);
+        let csvHtml = '';
+        for (let row of displayRows) {
+            const cells = row.split(',');
+            csvHtml += '<div style="font-family:monospace;font-size:0.7rem;padding:0.1rem 0;border-bottom:1px solid #f0f5f8;">';
+            csvHtml += cells.map(c => c.replace(/^"|"$/g, '').substring(0, 40)).join(' | ');
+            csvHtml += '</div>';
+        }
+        if (csvRows.length > 15) {
+            csvHtml += `<div style="font-size:0.7rem;color:#999;padding-top:0.3rem;">... and ${csvRows.length - 15} more rows</div>`;
+        }
+        csvPreview.innerHTML = csvHtml || '<div class="empty-state">No data</div>';
+        csvRowCount.textContent = `${csvRows.length} rows`;
+        
+        // Stats
+        const uniqueFolders = [...new Set(currentItems.map(i => i.folder))];
+        statsDiv.innerHTML = `
+            <div class="stat-card">📊 Entries: ${currentItems.length}</div>
+            <div class="stat-card">🔑 Codes: ${totalCodes}</div>
+            <div class="stat-card">📁 Folders: ${uniqueFolders.length}</div>
+        `;
+    }
+
+    // ── Main Conversion ──
+    function convertJson() {
+        if (!currentJsonData) {
+            statusSpan.innerHTML = '⚠️ Please upload a JSON file first.';
+            statusSpan.style.color = '#dc2626';
+            return;
+        }
+        
+        try {
+            currentItems = parseBitwardenJson(currentJsonData);
+            
+            if (currentItems.length === 0) {
+                statusSpan.innerHTML = '❌ No login items found in the JSON file.';
+                statusSpan.style.color = '#dc2626';
+                pdfPreview.innerHTML = '<div class="empty-state">No login items found</div>';
+                csvPreview.innerHTML = '<div class="empty-state">No login items found</div>';
+                return;
+            }
+            
+            statusSpan.innerHTML = `✅ Converted ${currentItems.length} entries! Ready for PDF/CSV export.`;
+            statusSpan.style.color = '#065f46';
+            updateAll();
+            
+        } catch (err) {
+            statusSpan.innerHTML = `❌ Error: ${err.message}`;
+            statusSpan.style.color = '#dc2626';
+        }
+    }
+
+    // ── Download Handlers ──
+    function downloadPdf() {
+        if (!currentItems || currentItems.length === 0) {
+            alert('No data to export. Please convert a JSON file first.');
+            return;
+        }
+        
+        try {
+            const doc = generatePdfTable(currentItems);
+            doc.save('bitwarden_backup_codes_table.pdf');
+            pdfStatus.style.display = 'inline';
+            setTimeout(() => { pdfStatus.style.display = 'none'; }, 3000);
+        } catch (err) {
+            alert('PDF error: ' + err.message);
+        }
+    }
+
+    function downloadCsv() {
+        if (!currentItems || currentItems.length === 0) {
+            alert('No data to export. Please convert a JSON file first.');
+            return;
+        }
+        
+        try {
+            const result = generateCsv(currentItems);
+            const blob = new Blob(['\uFEFF' + result.csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bitwarden_canva_ready.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 500);
+            csvStatus.style.display = 'inline';
+            setTimeout(() => { csvStatus.style.display = 'none'; }, 3000);
+        } catch (err) {
+            alert('CSV error: ' + err.message);
+        }
+    }
+
+    // ── File Handling ──
+    function handleFile(file) {
+        if (!file) return;
+        fileNameSpan.innerHTML = `📄 ${file.name}`;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                currentJsonData = JSON.parse(e.target.result);
+                statusSpan.innerHTML = `✅ Loaded: ${file.name}. Converting...`;
+                statusSpan.style.color = '#065f46';
+                convertJson();
+            } catch (err) {
+                currentJsonData = null;
+                statusSpan.innerHTML = `❌ Invalid JSON file: ${err.message}`;
+                statusSpan.style.color = '#dc2626';
+            }
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    function clearAll() {
+        currentJsonData = null;
+        currentItems = [];
+        jsonFileInput.value = '';
+        fileNameSpan.innerHTML = 'or drag & drop JSON file here';
+        statusSpan.innerHTML = 'Cleared. Upload a new JSON file.';
+        statusSpan.style.color = '#1f4a6e';
+        pdfPreview.innerHTML = '<div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>';
+        csvPreview.innerHTML = '<div class="empty-state">Upload a Bitwarden JSON file and click "Convert"</div>';
+        pdfEntryCount.textContent = '0 entries';
+        csvRowCount.textContent = '0 rows';
+        statsDiv.innerHTML = '';
+    }
+
+    // ── Event Listeners ──
+    jsonFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#2c7da0';
+        dropZone.style.background = '#f1f5f9';
+    });
+    
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        dropZone.style.background = '#f8fafc';
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        dropZone.style.background = '#f8fafc';
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && (files[0].type === 'application/json' || files[0].name.endsWith('.json'))) {
+            handleFile(files[0]);
+        } else {
+            statusSpan.innerHTML = '❌ Please drop a valid JSON file';
+            statusSpan.style.color = '#dc2626';
+        }
+    });
+
+    convertBtn.addEventListener('click', convertJson);
+    clearBtn.addEventListener('click', clearAll);
+    pdfDownloadBtn.addEventListener('click', downloadPdf);
+    csvDownloadBtn.addEventListener('click', downloadCsv);
+
+    // ── Sample Data ──
+    const sampleJson = {
+        "folders": [
+            { "id": "folder1", "name": "Gaming" },
+            { "id": "folder2", "name": "Social" },
+            { "id": "folder3", "name": "Banking" },
+            { "id": "folder4", "name": "Work" }
+        ],
+        "items": [
+            {
+                "type": 1,
+                "folderId": "folder1",
+                "name": "Steam Account",
+                "login": { "username": "ali7", "password": "12345" },
+                "notes": "1. 3126 6674\n2. 8151 5915\n3. 8883 3073\n4. 0226 7770\n5. 5032 8808\n6. 5636 7884\n7. 9167 6364\n8. 9289 7231\n9. 1782 3719\n10. 5352 5288"
+            },
+            {
+                "type": 1,
+                "folderId": "folder2",
+                "name": "Twitter",
+                "login": { "username": "alice123", "password": "TwitterPass456" },
+                "notes": "Backup codes:\nAAAA-1111-BBBB-2222\nCCCC-3333-DDDD-4444\nEEEE-5555-FFFF-6666"
+            },
+            {
+                "type": 1,
+                "folderId": "folder3",
+                "name": "Chase Bank",
+                "login": { "username": "bank_user", "password": "BankPass789" },
+                "notes": "Recovery codes:\n1111-2222-3333-4444\n5555-6666-7777-8888\n9999-0000-1111-2222"
+            },
+            {
+                "type": 1,
+                "folderId": "folder4",
+                "name": "Company Email",
+                "login": { "username": "john.doe@company.com", "password": "VeryLongPassword123!@#" },
+                "notes": "Backup codes:\nAAAA-1111-BBBB-2222"
+            }
+        ]
+    };
+    
+    currentJsonData = sampleJson;
+    fileNameSpan.innerHTML = '📄 sample_data.json (loaded automatically)';
+    convertJson();
+})();
+</script>
+</body>
+</html>
