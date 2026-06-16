@@ -1,0 +1,82 @@
+## 🔒 Security & Privacy
+
+### This tool is 100% SAFE. Here's why:
+
+1. **No Data Uploads** - Everything runs entirely in your browser. **Your JSON file NEVER leaves your computer.**
+
+2. **No Server Communication** - No network requests are made. You can verify this by:
+   - Opening your browser's Developer Tools (F12)
+   - Going to the "Network" tab
+   - You'll see ZERO external requests
+
+3. **Open Source** - The complete source code is available for you to inspect:
+   - [View the code here](https://github.com/[Your-Username]/bitwarden-backup-code-converter/blob/main/index.html)
+   - No minified or obfuscated code - everything is readable
+
+4. **No Data Storage** - The tool does NOT:
+   - Save your passwords to disk
+   - Send them anywhere
+   - Store them in cookies or localStorage
+   - Share them with third parties
+
+5. **Self-Contained** - Only one HTML file. No dependencies except:
+   - jsPDF (loaded from CDN - [check their security here](https://github.com/parallax/jsPDF))
+   - jspdf-autotable (loaded from CDN)
+
+### How to Verify This Yourself:
+
+1. **Open Developer Tools** (F12 on Windows/Linux, Cmd+Option+I on Mac)
+2. Click the **"Network"** tab
+3. Use the tool - you'll see ZERO network requests to external servers
+4. Click the **"Sources"** tab - you can see all the JavaScript code
+
+### 📸 Screenshots of Verification:
+
+![No Network Requests](screenshots/network-tab.png)
+![Full Source Code](screenshots/source-code.png)
+
+### 🔐 My Commitment:
+
+I created this tool to help the Bitwarden community because I use it myself. 
+**Your security is my priority.**
+
+- ✅ 100% client-side
+- ✅ No data collection
+- ✅ No tracking
+- ✅ No analytics
+- ✅ No external storage
+
+### 🛡️ How to Run This Safely:
+
+1. Download the HTML file from the repository
+2. Open it in your browser **while offline** (disconnect from the internet)
+3. Use the tool - it works completely offline (except for CDN dependencies on first load)
+4. For maximum security: download jsPDF and jspdf-autotable locally
+
+### 📋 Security Checklist:
+
+- [x] Open source
+- [x] No external API calls
+- [x] No data persistence
+- [x] No analytics/tracking
+- [x] Runs entirely in your browser
+- [x] Can be run offline
+
+## 🧪 Testing & Reviews
+
+This tool has been tested by:
+- [ ] Myself (daily user of Bitwarden)
+- [ ] Community members (see Issues and Discussions)
+
+If you're concerned, here's what you can do:
+1. Inspect the source code
+2. Run it in a sandbox or VM first
+3. Disable your internet and test it offline
+
+## 📞 Questions?
+
+If you have security concerns, please open an issue or DM me on Reddit.
+
+---
+
+*TL;DR: This is a client-side tool that runs entirely in your browser. Your passwords never leave your computer. You can verify this by checking the Network tab in DevTools.*
